@@ -48,9 +48,9 @@ class MigrationPatch implements DataPatchInterface
     protected StoreManagerInterface $storeManager;
 
     /**
-     * @var SourceItemInterfaceFactory
+     * @var SourceItemInterface
      */
-    protected SourceItemInterfaceFactory $sourceItemFactory;
+    protected SourceItemInterface $sourceItemInterface;
 
     /**
      * @var SourceItemsSaveInterface
@@ -63,6 +63,11 @@ class MigrationPatch implements DataPatchInterface
     protected EavSetup $eavSetup;
 
     /**
+     * @var CategoryLink
+     */
+    protected CategoryLinkManagementInterface $categoryLink;
+
+    /**
      * @var array
      */
     protected array $sourceItems = [];
@@ -72,11 +77,11 @@ class MigrationPatch implements DataPatchInterface
      *
      * @param ProductInterfaceFactory $productInterfaceFactory
      * @param ProductRepositoryInterface $productRepository
-     * @param SourceItemInterfaceFactory $sourceItemFactory
+     * @param SourceItemInterface $sourceItemInterface
      * @param SourceItemsSaveInterface $sourceItemsSaveInterface
      * @param State $appState
      * @param StoreManagerInterface $storeManager
-	 * @param EavSetup $eavSetup
+     * @param EavSetup $eavSetup
      * @param CategoryLinkManagementInterface $categoryLink
      */
     public function __construct(
@@ -85,18 +90,26 @@ class MigrationPatch implements DataPatchInterface
         State $appState,
         StoreManagerInterface $storeManager,
         EavSetup $eavSetup,
-		SourceItemInterfaceFactory $sourceItemFactory,
+        SourceItemInterface $sourceItemInterface,
         SourceItemsSaveInterface $sourceItemsSaveInterface,
-		CategoryLinkManagementInterface $categoryLink
+        CategoryLinkManagementInterface $categoryLink
     ) {
         $this->appState = $appState;
         $this->productInterfaceFactory = $productInterfaceFactory;
         $this->productRepository = $productRepository;
-		$this->eavSetup = $eavSetup;
+        $this->eavSetup = $eavSetup;
         $this->storeManager = $storeManager;
-        $this->sourceItemFactory = $sourceItemFactory;
+        $this->sourceItemInterface = $sourceItemInterface;
         $this->sourceItemsSaveInterface = $sourceItemsSaveInterface;
-		$this->categoryLink = $categoryLink;
+        $this->categoryLink = $categoryLink;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public static function getDependencies(): array
+    {
+        return [];
     }
 
     /**
@@ -124,11 +137,11 @@ class MigrationPatch implements DataPatchInterface
 
         $attributeSetId = $this->eavSetup->getAttributeSetId(Product::ENTITY, 'Default');
         $websiteIDs = [$this->storeManager->getStore()->getWebsiteId()];
-				$product->setTypeId(Type::TYPE_SIMPLE)
+        $product->setTypeId(Type::TYPE_SIMPLE)
             ->setWebsiteIds($websiteIDs)
             ->setAttributeSetId($attributeSetId)
             ->setName('A very simple product')
-			>setUrlKey('verysimpleproduct')
+            ->setUrlKey('verysimpleproduct')
             ->setSku('very-simple-product')
             ->setPrice(900)
             ->setVisibility(Visibility::VISIBILITY_BOTH)
@@ -148,15 +161,7 @@ class MigrationPatch implements DataPatchInterface
         $categoryId = $this->categoryCollectionFactory->create()
             ->addAttributeToFilter('name', $categoryTitle)
             ->getAllIds();
-	    $this->categoryLink->assignProductToCategories($product->getSku(), $categoryId);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public static function getDependencies(): array
-    {
-        return [];
+        $this->categoryLink->assignProductToCategories($product->getSku(), $categoryId);
     }
 
     /**
